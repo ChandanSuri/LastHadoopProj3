@@ -1,0 +1,67 @@
+group 'eduonix-cloud-data'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+
+def mainClassName = "org.eduonix.AWSCloudProcessor"
+
+// Specify any additional project properties.
+ext {
+    slf4jVersion = "1.7.5"
+
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+
+task fatJar(type: Jar) {
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+    exclude 'META-INF/*.SF'
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Quickstart', 'Implementation-Version': version
+        attributes 'Main-Class': "$mainClassName"
+    }
+    zip64 true
+}
+
+
+task deployStaging(type: Copy, dependsOn: 'fatJar') {
+
+    delete "deploy"
+    def file = new File("build/libs/${project.name}-all-${version}.jar")
+    println "path= $file.absolutePath, exists= ${file.exists()}"
+    from(file)
+    into("deploy/")
+    rename { filename ->
+        filename.replace 'eduonix-cloud-data-all-1.0-SNAPSHOT', 'uber'
+    }
+}
+
+dependencies {
+
+    compile 'commons-httpclient:commons-httpclient:3.1'
+        // if cloudera
+  /*  compile fileTree(dir: '/usr/lib/hadoop/client',
+            include: '*.jar'
+             )  */
+
+    compile 'org.apache.hadoop:hadoop-client:2.4.0'
+    compile 'org.apache.hadoop:hadoop-hdfs:2.4.0'
+    compile 'com.google.code.gson:gson:2.3.1'
+    compile 'org.apache.crunch:crunch-core:0.12.0'
+    compile 'com.rockymadden.stringmetric:stringmetric-core_2.10:0.27.3'
+    compile 'com.amazonaws:aws-java-sdk-ec2:1.10.20'
+    compile 'com.amazonaws:aws-java-sdk-core:1.10.20'
+    compile 'com.amazonaws:aws-java-sdk-emr:1.10.20'
+    compile 'com.amazonaws:aws-java-sdk-s3:1.10.20'
+    testCompile 'junit:junit:4.11'
+}
